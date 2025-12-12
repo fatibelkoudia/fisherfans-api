@@ -1,8 +1,4 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+//  Prisma Schema for FisherFans
 
 generator client {
   provider = "prisma-client-js"
@@ -11,4 +7,189 @@ generator client {
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
+}
+
+//  ENUMS
+
+enum UserStatus {
+  particulier
+  professionnel
+}
+
+enum UserActivityType {
+  location
+  guide
+}
+
+enum PermitType {
+  cotier
+  fluvial
+}
+
+enum BoatType {
+  open
+  cabine
+  catamaran
+  voilier
+  jetski
+  canoe
+}
+
+enum TripType {
+  journaliere
+  recurrente
+}
+
+enum TripPricingType {
+  global
+  par_personne
+}
+
+//  MODELS
+
+model User {
+  id              String       @id @default(uuid())
+  nom             String
+  prenom          String
+  date_naissance  DateTime
+  email           String       @unique
+  telephone       String
+  adresse         String
+  code_postal     String
+  ville           String
+  langues         String[]
+  photo_url       String?
+  statut          UserStatus
+  societe         String?
+  type_activite   UserActivityType?
+  siret           String?
+  rc              String?
+  permis_bateau   String?       @db.VarChar(8)
+  assurance       String?       @db.VarChar(12)
+
+  deleted_at      DateTime?
+  deleted_by      String?
+
+  boats           Boat[]
+  trips           Trip[]        @relation("UserTrips")
+  bookings        Booking[]
+  logEntries      LogEntry[]
+
+  @@map("users")
+}
+
+// ---------------------------------------------
+
+model Boat {
+  id               String     @id @default(uuid())
+  user_id          String
+  nom              String
+  description      String?
+  marque           String
+  annee            Int
+  photo_url        String?
+  permis_requis    PermitType
+  type             BoatType
+  equipements      String[]
+  caution_eur      Decimal     @db.Decimal(10,2)
+  capacite_max     Int
+  couchages        Int
+  port_attache_ville String
+  lat              Decimal     @db.Decimal(9,6)
+  lon              Decimal     @db.Decimal(9,6)
+  motorisation     String
+  puissance_cv     Int
+
+  deleted_at       DateTime?
+  deleted_by       String?
+
+  owner            User        @relation(fields: [user_id], references: [id])
+  trips            Trip[]
+
+  @@index([lat, lon])
+  @@map("boats")
+}
+
+// ---------------------------------------------
+
+model Trip {
+  id              String           @id @default(uuid())
+  owner_id        String
+  boat_id         String
+  titre           String
+  infos_pratiques String?
+  type_sortie     TripType
+  type_tarif      TripPricingType
+  nb_passagers    Int
+  prix_eur        Decimal          @db.Decimal(10,2)
+
+  deleted_at      DateTime?
+  deleted_by      String?
+
+  owner           User             @relation("UserTrips", fields: [owner_id], references: [id])
+  boat            Boat             @relation(fields: [boat_id], references: [id])
+  occurrences     Occurrence[]
+  bookings        Booking[]
+
+  @@map("trips")
+}
+
+// ---------------------------------------------
+
+model Occurrence {
+  id            String     @id @default(uuid())
+  trip_id       String
+  date_debut    DateTime
+  date_fin      DateTime
+  heure_depart  DateTime
+  heure_fin     DateTime
+
+  trip          Trip       @relation(fields: [trip_id], references: [id])
+  bookings      Booking[]
+
+  @@map("occurrences")
+}
+
+// ---------------------------------------------
+
+model Booking {
+  id             String     @id @default(uuid())
+  trip_id        String
+  user_id        String
+  occurrence_id  String
+  date_retenue   DateTime
+  nb_places      Int
+  prix_total_eur Decimal     @db.Decimal(10,2)
+
+  deleted_at     DateTime?
+  deleted_by     String?
+
+  trip           Trip        @relation(fields: [trip_id], references: [id])
+  user           User        @relation(fields: [user_id], references: [id])
+  occurrence     Occurrence  @relation(fields: [occurrence_id], references: [id])
+
+  @@unique([trip_id, user_id, occurrence_id])
+  @@map("bookings")
+}
+
+// ---------------------------------------------
+
+model LogEntry {
+  id          String    @id @default(uuid())
+  owner_id    String
+  poisson_nom String
+  photo_url   String?
+  commentaire String?
+  taille_cm   Decimal   @db.Decimal(5,2)
+  poids_kg    Decimal   @db.Decimal(5,2)
+  lieu        String
+  date_peche  DateTime
+  relache     Boolean
+
+  deleted_at  DateTime?
+  deleted_by  String?
+
+  owner       User       @relation(fields: [owner_id], references: [id])
+
+  @@map("log_entries")
 }
