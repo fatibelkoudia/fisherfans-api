@@ -1,5 +1,98 @@
 import { Context } from "../context";
-import { GraphQLScalarType, Kind, GraphQLError } from "graphql";
+import {
+    Boat,
+    BoatType,
+    Booking,
+    LogEntry,
+    Occurrence,
+    PermitType,
+    Trip,
+    TripPricingType,
+    TripType,
+    User,
+    UserActivityType,
+    UserStatus
+} from "@prisma/client";
+import { GraphQLScalarType, Kind, GraphQLError, ValueNode } from "graphql";
+
+type EmptyArgs = Record<string, never>;
+type IdArgs = { id: string };
+type BBox = { minLat: number; maxLat: number; minLon: number; maxLon: number };
+type BBoxArgs = { bbox: BBox };
+
+type CreateUserInput = {
+    nom: string;
+    prenom: string;
+    dateNaissance: Date;
+    email: string;
+    telephone: string;
+    adresse: string;
+    codePostal: string;
+    ville: string;
+    langues: string[];
+    photoUrl?: string | null;
+    statut: UserStatus;
+    societe?: string | null;
+    typeActivite?: UserActivityType | null;
+    siret?: string | null;
+    rc?: string | null;
+    permisBateau?: string | null;
+    assurance?: string | null;
+};
+
+type CreateBoatInput = {
+    nom: string;
+    description?: string | null;
+    marque: string;
+    annee: number;
+    photoUrl?: string | null;
+    permisRequis: PermitType;
+    type: BoatType;
+    equipements: string[];
+    cautionEur: number;
+    capaciteMax: number;
+    couchages: number;
+    portAttacheVille: string;
+    lat: number;
+    lon: number;
+    motorisation: string;
+    puissanceCv: number;
+};
+
+type CreateTripInput = {
+    boatId: string;
+    titre: string;
+    infosPratiques?: string | null;
+    typeSortie: TripType;
+    typeTarif: TripPricingType;
+    nbPassagers: number;
+    prixEur: number;
+};
+
+type CreateOccurrenceInput = {
+    tripId: string;
+    dateDebut: Date;
+    dateFin: Date;
+    heureDepart: Date;
+    heureFin: Date;
+};
+
+type CreateBookingInput = {
+    tripId: string;
+    occurrenceId: string;
+    nbPlaces: number;
+};
+
+type CreateLogEntryInput = {
+    poissonNom: string;
+    photoUrl?: string | null;
+    commentaire?: string | null;
+    tailleCm: number;
+    poidsKg: number;
+    lieu: string;
+    datePeche: Date;
+    relache: boolean;
+};
 
 
 // BUSINESS ERROR HELPER
@@ -16,16 +109,19 @@ export const resolvers = {
     DateTime: new GraphQLScalarType({
         name: 'DateTime',
         description: 'Date custom scalar type',
-        serialize(value: any) {
+        serialize(value: unknown) {
             if (value instanceof Date) {
                 return value.toISOString();
             }
             return value;
         },
-        parseValue(value: any) {
-            return new Date(value);
+        parseValue(value: unknown) {
+            if (value instanceof Date) {
+                return value;
+            }
+            return new Date(String(value));
         },
-        parseLiteral(ast) {
+        parseLiteral(ast: ValueNode) {
             if (ast.kind === Kind.STRING) {
                 return new Date(ast.value);
             }
@@ -37,31 +133,31 @@ export const resolvers = {
 
     Query: {
         // Users
-        users: async (_: any, __: any, context: Context) => {
+        users: async (_parent: unknown, _args: EmptyArgs, context: Context) => {
             return context.prisma.user.findMany({
                 where: { deleted_at: null }
             });
         },
-        user: async (_: any, { id }: { id: string }, context: Context) => {
+        user: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             return context.prisma.user.findFirst({
                 where: { id, deleted_at: null }
             });
         },
 
         // Boats
-        boats: async (_: any, __: any, context: Context) => {
+        boats: async (_parent: unknown, _args: EmptyArgs, context: Context) => {
             return context.prisma.boat.findMany({
                 where: { deleted_at: null }
             });
         },
-        boat: async (_: any, { id }: { id: string }, context: Context) => {
+        boat: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             return context.prisma.boat.findFirst({
                 where: { id, deleted_at: null }
             });
         },
 
         // BR-G1: Bounding box search for boats (BF24)
-        boatsByLocation: async (_: any, { bbox }: { bbox: { minLat: number, maxLat: number, minLon: number, maxLon: number } }, context: Context) => {
+        boatsByLocation: async (_parent: unknown, { bbox }: BBoxArgs, context: Context) => {
             // Validate bounding box
             if (bbox.minLat >= bbox.maxLat || bbox.minLon >= bbox.maxLon) {
                 businessError("Invalid bounding box coordinates", "FF-004");
@@ -77,24 +173,24 @@ export const resolvers = {
         },
 
         // Trips
-        trips: async (_: any, __: any, context: Context) => {
+        trips: async (_parent: unknown, _args: EmptyArgs, context: Context) => {
             return context.prisma.trip.findMany({
                 where: { deleted_at: null }
             });
         },
-        trip: async (_: any, { id }: { id: string }, context: Context) => {
+        trip: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             return context.prisma.trip.findFirst({
                 where: { id, deleted_at: null }
             });
         },
 
         // Log Entries
-        logEntries: async (_: any, __: any, context: Context) => {
+        logEntries: async (_parent: unknown, _args: EmptyArgs, context: Context) => {
             return context.prisma.logEntry.findMany({
                 where: { deleted_at: null }
             });
         },
-        logEntry: async (_: any, { id }: { id: string }, context: Context) => {
+        logEntry: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             return context.prisma.logEntry.findFirst({
                 where: { id, deleted_at: null }
             });
@@ -110,7 +206,7 @@ export const resolvers = {
         // USER MUTATIONS
         // -------------------------------------------------------------------
 
-        createUser: async (_: any, { input }: { input: any }, context: Context) => {
+        createUser: async (_parent: unknown, { input }: { input: CreateUserInput }, context: Context) => {
             // BR-U2: Professional user constraints
             if (input.statut === 'professionnel') {
                 if (!input.societe || !input.typeActivite || !input.siret || !input.rc) {
@@ -153,7 +249,7 @@ export const resolvers = {
         },
 
         // BR-U4: GDPR soft delete with anonymization
-        deleteUser: async (_: any, { id }: { id: string }, context: Context) => {
+        deleteUser: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             const user = await context.prisma.user.findFirst({
                 where: { id, deleted_at: null }
             });
@@ -183,7 +279,7 @@ export const resolvers = {
         // BOAT MUTATIONS
         // -------------------------------------------------------------------
 
-        createBoat: async (_: any, { userId, input }: { userId: string, input: any }, context: Context) => {
+        createBoat: async (_parent: unknown, { userId, input }: { userId: string; input: CreateBoatInput }, context: Context) => {
             // Get the user
             const user = await context.prisma.user.findFirst({
                 where: { id: userId, deleted_at: null }
@@ -229,7 +325,7 @@ export const resolvers = {
             });
         },
 
-        deleteBoat: async (_: any, { id }: { id: string }, context: Context) => {
+        deleteBoat: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             const boat = await context.prisma.boat.findFirst({
                 where: { id, deleted_at: null }
             });
@@ -253,7 +349,7 @@ export const resolvers = {
         // TRIP MUTATIONS
         // -------------------------------------------------------------------
 
-        createTrip: async (_: any, { userId, input }: { userId: string, input: any }, context: Context) => {
+        createTrip: async (_parent: unknown, { userId, input }: { userId: string; input: CreateTripInput }, context: Context) => {
             // BR-S1: Boat ownership required (BF26)
             const userBoats = await context.prisma.boat.findMany({
                 where: { user_id: userId, deleted_at: null }
@@ -299,7 +395,7 @@ export const resolvers = {
             });
         },
 
-        deleteTrip: async (_: any, { id }: { id: string }, context: Context) => {
+        deleteTrip: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             const trip = await context.prisma.trip.findFirst({
                 where: { id, deleted_at: null }
             });
@@ -323,7 +419,7 @@ export const resolvers = {
         // OCCURRENCE MUTATIONS
         // -------------------------------------------------------------------
 
-        createOccurrence: async (_: any, { input }: { input: any }, context: Context) => {
+        createOccurrence: async (_parent: unknown, { input }: { input: CreateOccurrenceInput }, context: Context) => {
             // Verify trip exists
             const trip = await context.prisma.trip.findFirst({
                 where: { id: input.tripId, deleted_at: null }
@@ -356,7 +452,7 @@ export const resolvers = {
         // BOOKING MUTATIONS
         // -------------------------------------------------------------------
 
-        createBooking: async (_: any, { userId, input }: { userId: string, input: any }, context: Context) => {
+        createBooking: async (_parent: unknown, { userId, input }: { userId: string; input: CreateBookingInput }, context: Context) => {
             // Verify user exists
             const user = await context.prisma.user.findFirst({
                 where: { id: userId, deleted_at: null }
@@ -426,7 +522,7 @@ export const resolvers = {
             });
         },
 
-        deleteBooking: async (_: any, { id }: { id: string }, context: Context) => {
+        deleteBooking: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             const booking = await context.prisma.booking.findFirst({
                 where: { id, deleted_at: null }
             });
@@ -450,7 +546,7 @@ export const resolvers = {
         // LOG ENTRY MUTATIONS
         // -------------------------------------------------------------------
 
-        createLogEntry: async (_: any, { userId, input }: { userId: string, input: any }, context: Context) => {
+        createLogEntry: async (_parent: unknown, { userId, input }: { userId: string; input: CreateLogEntryInput }, context: Context) => {
             // Verify user exists
             const user = await context.prisma.user.findFirst({
                 where: { id: userId, deleted_at: null }
@@ -486,7 +582,7 @@ export const resolvers = {
             });
         },
 
-        deleteLogEntry: async (_: any, { id }: { id: string }, context: Context) => {
+        deleteLogEntry: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             const logEntry = await context.prisma.logEntry.findFirst({
                 where: { id, deleted_at: null }
             });
@@ -512,88 +608,88 @@ export const resolvers = {
     // ========================================================================
 
     User: {
-        dateNaissance: (parent: any) => parent.date_naissance,
-        codePostal: (parent: any) => parent.code_postal,
-        photoUrl: (parent: any) => parent.photo_url,
-        typeActivite: (parent: any) => parent.type_activite,
-        permisBateau: (parent: any) => parent.permis_bateau,
+        dateNaissance: (parent: User) => parent.date_naissance,
+        codePostal: (parent: User) => parent.code_postal,
+        photoUrl: (parent: User) => parent.photo_url,
+        typeActivite: (parent: User) => parent.type_activite,
+        permisBateau: (parent: User) => parent.permis_bateau,
 
-        boats: (parent: any, _: any, context: Context) =>
+        boats: (parent: User, _args: EmptyArgs, context: Context) =>
             context.prisma.boat.findMany({ where: { user_id: parent.id, deleted_at: null } }),
-        trips: (parent: any, _: any, context: Context) =>
+        trips: (parent: User, _args: EmptyArgs, context: Context) =>
             context.prisma.trip.findMany({ where: { owner_id: parent.id, deleted_at: null } }),
-        bookings: (parent: any, _: any, context: Context) =>
+        bookings: (parent: User, _args: EmptyArgs, context: Context) =>
             context.prisma.booking.findMany({ where: { user_id: parent.id, deleted_at: null } }),
-        logEntries: (parent: any, _: any, context: Context) =>
+        logEntries: (parent: User, _args: EmptyArgs, context: Context) =>
             context.prisma.logEntry.findMany({ where: { owner_id: parent.id, deleted_at: null } }),
     },
 
     Boat: {
-        photoUrl: (parent: any) => parent.photo_url,
-        permisRequis: (parent: any) => parent.permis_requis,
-        cautionEur: (parent: any) => Number(parent.caution_eur),
-        capaciteMax: (parent: any) => parent.capacite_max,
-        portAttacheVille: (parent: any) => parent.port_attache_ville,
-        puissanceCv: (parent: any) => parent.puissance_cv,
-        lat: (parent: any) => Number(parent.lat),
-        lon: (parent: any) => Number(parent.lon),
+        photoUrl: (parent: Boat) => parent.photo_url,
+        permisRequis: (parent: Boat) => parent.permis_requis,
+        cautionEur: (parent: Boat) => Number(parent.caution_eur),
+        capaciteMax: (parent: Boat) => parent.capacite_max,
+        portAttacheVille: (parent: Boat) => parent.port_attache_ville,
+        puissanceCv: (parent: Boat) => parent.puissance_cv,
+        lat: (parent: Boat) => Number(parent.lat),
+        lon: (parent: Boat) => Number(parent.lon),
 
-        owner: (parent: any, _: any, context: Context) =>
+        owner: (parent: Boat, _args: EmptyArgs, context: Context) =>
             context.prisma.user.findFirst({ where: { id: parent.user_id, deleted_at: null } }),
-        trips: (parent: any, _: any, context: Context) =>
+        trips: (parent: Boat, _args: EmptyArgs, context: Context) =>
             context.prisma.trip.findMany({ where: { boat_id: parent.id, deleted_at: null } }),
     },
 
     Trip: {
-        infosPratiques: (parent: any) => parent.infos_pratiques,
-        typeSortie: (parent: any) => parent.type_sortie,
-        typeTarif: (parent: any) => parent.type_tarif,
-        nbPassagers: (parent: any) => parent.nb_passagers,
-        prixEur: (parent: any) => Number(parent.prix_eur),
+        infosPratiques: (parent: Trip) => parent.infos_pratiques,
+        typeSortie: (parent: Trip) => parent.type_sortie,
+        typeTarif: (parent: Trip) => parent.type_tarif,
+        nbPassagers: (parent: Trip) => parent.nb_passagers,
+        prixEur: (parent: Trip) => Number(parent.prix_eur),
 
-        owner: (parent: any, _: any, context: Context) =>
+        owner: (parent: Trip, _args: EmptyArgs, context: Context) =>
             context.prisma.user.findFirst({ where: { id: parent.owner_id, deleted_at: null } }),
-        boat: (parent: any, _: any, context: Context) =>
+        boat: (parent: Trip, _args: EmptyArgs, context: Context) =>
             context.prisma.boat.findFirst({ where: { id: parent.boat_id, deleted_at: null } }),
-        occurrences: (parent: any, _: any, context: Context) =>
+        occurrences: (parent: Trip, _args: EmptyArgs, context: Context) =>
             context.prisma.occurrence.findMany({ where: { trip_id: parent.id } }),
-        bookings: (parent: any, _: any, context: Context) =>
+        bookings: (parent: Trip, _args: EmptyArgs, context: Context) =>
             context.prisma.booking.findMany({ where: { trip_id: parent.id, deleted_at: null } }),
     },
 
     Occurrence: {
-        dateDebut: (parent: any) => parent.date_debut,
-        dateFin: (parent: any) => parent.date_fin,
-        heureDepart: (parent: any) => parent.heure_depart,
-        heureFin: (parent: any) => parent.heure_fin,
+        dateDebut: (parent: Occurrence) => parent.date_debut,
+        dateFin: (parent: Occurrence) => parent.date_fin,
+        heureDepart: (parent: Occurrence) => parent.heure_depart,
+        heureFin: (parent: Occurrence) => parent.heure_fin,
 
-        trip: (parent: any, _: any, context: Context) =>
+        trip: (parent: Occurrence, _args: EmptyArgs, context: Context) =>
             context.prisma.trip.findFirst({ where: { id: parent.trip_id, deleted_at: null } }),
-        bookings: (parent: any, _: any, context: Context) =>
+        bookings: (parent: Occurrence, _args: EmptyArgs, context: Context) =>
             context.prisma.booking.findMany({ where: { occurrence_id: parent.id, deleted_at: null } }),
     },
 
     Booking: {
-        dateRetenue: (parent: any) => parent.date_retenue,
-        nbPlaces: (parent: any) => parent.nb_places,
-        prixTotalEur: (parent: any) => Number(parent.prix_total_eur),
+        dateRetenue: (parent: Booking) => parent.date_retenue,
+        nbPlaces: (parent: Booking) => parent.nb_places,
+        prixTotalEur: (parent: Booking) => Number(parent.prix_total_eur),
 
-        trip: (parent: any, _: any, context: Context) =>
+        trip: (parent: Booking, _args: EmptyArgs, context: Context) =>
             context.prisma.trip.findFirst({ where: { id: parent.trip_id, deleted_at: null } }),
-        user: (parent: any, _: any, context: Context) =>
+        user: (parent: Booking, _args: EmptyArgs, context: Context) =>
             context.prisma.user.findFirst({ where: { id: parent.user_id, deleted_at: null } }),
-        occurrence: (parent: any, _: any, context: Context) =>
+        occurrence: (parent: Booking, _args: EmptyArgs, context: Context) =>
             context.prisma.occurrence.findUnique({ where: { id: parent.occurrence_id } }),
     },
 
     LogEntry: {
-        poissonNom: (parent: any) => parent.poisson_nom,
-        photoUrl: (parent: any) => parent.photo_url,
-        tailleCm: (parent: any) => Number(parent.taille_cm),
-        poidsKg: (parent: any) => Number(parent.poids_kg),
-        datePeche: (parent: any) => parent.date_peche,
+        poissonNom: (parent: LogEntry) => parent.poisson_nom,
+        photoUrl: (parent: LogEntry) => parent.photo_url,
+        tailleCm: (parent: LogEntry) => Number(parent.taille_cm),
+        poidsKg: (parent: LogEntry) => Number(parent.poids_kg),
+        datePeche: (parent: LogEntry) => parent.date_peche,
 
-        owner: (parent: any, _: any, context: Context) =>
+        owner: (parent: LogEntry, _args: EmptyArgs, context: Context) =>
             context.prisma.user.findFirst({ where: { id: parent.owner_id, deleted_at: null } }),
     }
 };
