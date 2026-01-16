@@ -17,7 +17,6 @@ This project uses Docker Compose to run PostgreSQL for the database.
 1. **Clone the repository**
    ```bash
    git clone https://github.com/fatibelkoudia/fisherfans-api.git
-   cd fisherfans-api
    ```
 
 2. **Install dependencies**
@@ -50,8 +49,8 @@ This project uses Docker Compose to run PostgreSQL for the database.
    ```
 
 8. **Access your services**
-   - **GraphQL API**: `http://localhost:4000` 🚀
-   - **Adminer (Database UI)**: `http://localhost:8080` 🗄️
+   - **GraphQL API**: `http://localhost:4000` 
+   - **Adminer (Database UI)**: `http://localhost:8080` 
 
 ### Service Status
 
