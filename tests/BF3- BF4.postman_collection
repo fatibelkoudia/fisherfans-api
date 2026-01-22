@@ -1,0 +1,18 @@
+{
+	"info": {
+		"_postman_id": "ff41468f-654d-4f26-ba29-76c2df9728df",
+		"name": "FisherFans API - Devoir 4",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "46338233"
+	},
+	"item": [
+		{
+			"name": "New Request",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
