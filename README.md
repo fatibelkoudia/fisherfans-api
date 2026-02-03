@@ -26,31 +26,31 @@ This project uses Docker Compose to run PostgreSQL for the database.
 
 3. **Start Docker Desktop** (if not already running)
 
-4. **Start the database services**
+4. **Start API + database services**
    ```bash
    npm run docker:up
    ```
    This will start:
    - PostgreSQL 15 on `localhost:5432`
+   - GraphQL API on `http://localhost:4000`
 
-5. **Generate Prisma Client**
+5. **Push the database schema (first run only)**
    ```bash
-   npx prisma generate
+   npx prisma db push
    ```
 
-6. **Push the database schema**
+6. **Seed deterministic team data**
    ```bash
-   npm run db:push
+   npx prisma db seed
+   ```
+   This reset-and-seed command always recreates the same shared dataset.
+   The dataset now includes six users, three boats, three trips, two occurrences per recurring trip, three bookings, and three log entries. Run the following SQL probe from inside the database container to double-check the counts:
+   ```bash
+   docker compose exec postgres psql -U fisherfans_user -d fisherfans -c "SELECT 'users' AS table, count(*) FROM users UNION ALL SELECT 'boats', count(*) FROM boats UNION ALL SELECT 'trips', count(*) FROM trips UNION ALL SELECT 'occurrences', count(*) FROM occurrences UNION ALL SELECT 'bookings', count(*) FROM bookings UNION ALL SELECT 'log_entries', count(*) FROM log_entries;"
    ```
 
-7. **Start the development server**
-   ```bash
-   npm run dev
-   ```
-
-8. **Access your services**
+7. **Access your services**
    - **GraphQL API**: `http://localhost:4000` 
-   - **Adminer (Database UI)**: `http://localhost:8080` 
 
 ### Service Status
 
@@ -98,11 +98,12 @@ curl -X POST http://localhost:4000/ \
 | `npm run dev` | Start development server with hot reload | Development |
 | `npm run build` | Compile TypeScript to JavaScript | Production build |
 | `npm run start` | Start compiled production server | Production |
-| `npm run docker:up` | Start PostgreSQL container | Database setup |
+| `npm run docker:up` | Start API + PostgreSQL containers | Local stack |
 | `npm run docker:down` | Stop and remove containers | Cleanup |
 | `npm run docker:logs` | View real-time container logs | Debugging |
 | `npm run db:push` | Push schema changes to database | Schema sync |
 | `npm run db:migrate` | Create and apply migrations | Schema versioning |
+| `npm run db:seed` | Seed deterministic shared dataset | Team setup |
 | `npm run db:studio` | Open Prisma Studio interface | Data management |
 
 ### Docker Services Details
