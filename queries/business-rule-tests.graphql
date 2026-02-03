@@ -1,0 +1,222 @@
+# 1. Create a professional user without a valid boat license, then try to create a boat
+mutation CreateUserWithoutLicense {
+  createUser(
+    input: {
+      nom: "NoLicense"
+      prenom: "Rogue"
+      dateNaissance: "1988-01-01T00:00:00.000Z"
+      email: "nolicense@fisherfans.test"
+      telephone: "+33100000001"
+      adresse: "1 rue Test"
+      codePostal: "75001"
+      ville: "Paris"
+      langues: ["fr"]
+      statut: professionnel
+      societe: "NoLicense SARL"
+      typeActivite: location
+      siret: "99999999999999"
+      rc: "RC-TEST-001"
+    }
+  ) {
+    id
+  }
+}
+
+# Now try to create a boat with that userId; expect FF-001
+mutation CreateBoatForUnlicensed($userId: ID!) {
+  createBoat(
+    userId: $userId
+    input: {
+      nom: "Fail Boat"
+      marque: "Test"
+      annee: 2023
+      permisRequis: cotier
+      type: open
+      equipements: ["GPS"]
+      cautionEur: 1000
+      capaciteMax: 4
+      couchages: 2
+      portAttacheVille: "Paris"
+      lat: 48.8566
+      lon: 2.3522
+      motorisation: "hors-bord"
+      puissanceCv: 100
+    }
+  ) {
+    id
+  }
+}
+
+# 2. Create a licensed user and their boat (happy path)
+mutation CreateLicensedUser {
+  createUser(
+    input: {
+      nom: "Licensed"
+      prenom: "Owner"
+      dateNaissance: "1985-01-01T00:00:00.000Z"
+      email: "licensed-owner@fisherfans.test"
+      telephone: "+33100000002"
+      adresse: "2 rue Test"
+      codePostal: "75002"
+      ville: "Paris"
+      langues: ["fr"]
+      statut: professionnel
+      societe: "License Co"
+      typeActivite: guide
+      siret: "88888888888888"
+      rc: "RC-TEST-002"
+      permisBateau: "COTIER01"
+    }
+  ) {
+    id
+  }
+}
+
+mutation CreateBoatForLicensed($userId: ID!) {
+  createBoat(
+    userId: $userId
+    input: {
+      nom: "Launchpad"
+      marque: "TestBuild"
+      annee: 2024
+      permisRequis: cotier
+      type: open
+      equipements: ["GPS"]
+      cautionEur: 1500
+      capaciteMax: 5
+      couchages: 2
+      portAttacheVille: "Paris"
+      lat: 48.8566
+      lon: 2.3522
+      motorisation: "hors-bord"
+      puissanceCv: 120
+    }
+  ) {
+    id
+  }
+}
+
+# 3. Trip creation fails because the user does not own a boat (FF-002)
+mutation TripWithoutBoat {
+  createTrip(
+    userId: "2afc9f7e-0abf-4997-bf7d-ec873de0ac6f" # seeded Lucie Bernard
+    input: {
+      boatId: "dc87cbd5-5dbb-489e-b500-f539fca173f6"
+      titre: "Invalid Trip"
+      typeSortie: journaliere
+      typeTarif: par_personne
+      nbPassagers: 4
+      prixEur: 100
+    }
+  ) {
+    id
+  }
+}
+
+# 4. Trip creation fails because the price is negative (FF-010)
+mutation TripNegativePrice {
+  createTrip(
+    userId: "9dc8ddf0-898b-471c-a4ab-79df1764f7a1"
+    input: {
+      boatId: "dc87cbd5-5dbb-489e-b500-f539fca173f6"
+      titre: "Negative Price"
+      typeSortie: journaliere
+      typeTarif: par_personne
+      nbPassagers: 4
+      prixEur: -50
+    }
+  ) {
+    id
+  }
+}
+
+# 5. Create a normal trip (success)
+mutation TripNormal {
+  createTrip(
+    userId: "9dc8ddf0-898b-471c-a4ab-79df1764f7a1"
+    input: {
+      boatId: "dc87cbd5-5dbb-489e-b500-f539fca173f6"
+      titre: "Provenance Tour"
+      infosPratiques: "Meet at the Vieux-Port 30 minutes before departure"
+      typeSortie: journaliere
+      typeTarif: par_personne
+      nbPassagers: 4
+      prixEur: 95
+    }
+  ) {
+    id
+    prixEur
+    nbPassagers
+  }
+}
+
+# 6. Add an occurrence on the newly created trip
+mutation CreateOccurrenceForTrip($tripId: ID!) {
+  createOccurrence(
+    input: {
+      tripId: $tripId
+      dateDebut: "2026-08-05T07:00:00.000Z"
+      dateFin: "2026-08-05T12:00:00.000Z"
+      heureDepart: "2026-08-05T07:00:00.000Z"
+      heureFin: "2026-08-05T12:00:00.000Z"
+    }
+  ) {
+    id
+  }
+}
+
+# 7. Attempt to overbook (FF-003) – remaining capacity is 4; try to take 5
+mutation BookingOverCapacity($tripId: ID!, $occurrenceId: ID!) {
+  createBooking(
+    userId: "27dc5eb8-9c85-41d9-94ca-0af322ec2c04"
+    input: {
+      tripId: $tripId
+      occurrenceId: $occurrenceId
+      nbPlaces: 5
+    }
+  ) {
+    id
+  }
+}
+
+# 8. Valid booking – this is a per-person trip, so total should be prixEur * nbPlaces
+mutation BookingValid($tripId: ID!, $occurrenceId: ID!) {
+  createBooking(
+    userId: "27dc5eb8-9c85-41d9-94ca-0af322ec2c04"
+    input: {
+      tripId: $tripId
+      occurrenceId: $occurrenceId
+      nbPlaces: 2
+    }
+  ) {
+    id
+    nbPlaces
+    prixTotalEur
+  }
+}
+
+# 9. Duplicate booking – expect Prisma unique constraint error (same user/trip/occurrence)
+mutation BookingDuplicate($tripId: ID!, $occurrenceId: ID!) {
+  createBooking(
+    userId: "27dc5eb8-9c85-41d9-94ca-0af322ec2c04"
+    input: {
+      tripId: $tripId
+      occurrenceId: $occurrenceId
+      nbPlaces: 1
+    }
+  ) {
+    id
+  }
+}
+
+# 10. Delete the licensed boat from step 2 and confirm it disappears
+mutation DeleteBoat($boatId: ID!) {
+  deleteBoat(id: $boatId)
+}
+
+query BoatsAfterDelete {
+  boats {
+    id
+    nom
+  }
+}
