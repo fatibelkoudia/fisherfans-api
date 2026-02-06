@@ -131,7 +131,6 @@ export class BoatService extends BaseService {
     }
 
     // PRIVATE VALIDATION METHODS
-
     private validateBoundingBox(bbox: BBox): void {
         if (bbox.minLat >= bbox.maxLat || bbox.minLon >= bbox.maxLon) {
             businessError("Invalid bounding box coordinates", "FF-004");

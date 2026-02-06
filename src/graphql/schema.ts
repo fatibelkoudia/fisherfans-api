@@ -171,6 +171,27 @@ export const typeDefs = gql`
     password: String!
   }
 
+  input UpdateUserInput {
+    nom: String
+    prenom: String
+    dateNaissance: DateTime
+    email: String
+    telephone: String
+    adresse: String
+    codePostal: String
+    ville: String
+    langues: [String!]
+    photoUrl: String
+    statut: UserStatus
+    societe: String
+    typeActivite: UserActivityType
+    siret: String
+    rc: String
+    permisBateau: String
+    assurance: String
+    password: String
+  }
+
   input CreateBoatInput {
     nom: String!
     description: String
@@ -268,6 +289,7 @@ export const typeDefs = gql`
     signup(input: CreateUserInput!): AuthPayload!
     login(input: LoginInput!): AuthPayload!
     createUser(input: CreateUserInput!): User!
+    updateUser(id: ID!, input: UpdateUserInput!): User!
     deleteUser(id: ID!): Boolean!
 
     # Boats
