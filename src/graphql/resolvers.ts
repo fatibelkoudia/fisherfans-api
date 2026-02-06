@@ -23,7 +23,8 @@ import {
     CreateBookingInput,
     CreateLogEntryInput,
     BBox,
-    LoginInput
+    LoginInput,
+    UpdateUserInput
 } from "../types/inputs";
 
 type EmptyArgs = Record<string, never>;
@@ -160,6 +161,17 @@ export const resolvers = {
         createUser: async (_parent: unknown, { input }: { input: CreateUserInput }, context: Context) => {
             try {
                 return await context.services.user.create(input);
+            } catch (error) {
+                if (error instanceof BusinessError) {
+                    throw error.toGraphQLError();
+                }
+                throw error;
+            }
+        },
+
+        updateUser: async (_parent: unknown, { id, input }: { id: string; input: UpdateUserInput }, context: Context) => {
+            try {
+                return await context.services.user.update(context, id, input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
