@@ -53,6 +53,7 @@ model User {
   prenom          String
   date_naissance  DateTime
   email           String       @unique
+  password_hash    String
   telephone       String
   adresse         String
   code_postal     String
