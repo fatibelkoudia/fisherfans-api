@@ -256,6 +256,30 @@
         }
       },
       "response": []
+    },
+    {
+      "name": "BF 19 - Récupération complète du profil d'un utilisateur",
+      "id": "ce8263e5-d498-4cf9-8cc9-0de920c38478",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 20 - Filtrer les utilisateurs",
+      "id": "a5c5c26c-2fc5-437c-a390-d41ffc18dd5e",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
     }
   ]
 }
