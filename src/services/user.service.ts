@@ -104,7 +104,7 @@ export class UserService extends BaseService {
         const user = await this.findById(userId);
         if (!user) return false;
 
-        return !!(user.permis_bateau && user.permis_bateau.length === 8);
+        return user.permis_bateau?.length === 8;
     }
 
     /**
