@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const bcrypt = require("bcrypt");
 const { PrismaClient } = require("@prisma/client");
 
 function resolveDatabaseUrl() {
@@ -29,7 +30,10 @@ const prisma = new PrismaClient({
   },
 });
 
-const users = [
+const seedPassword = "FisherFans123!";
+const seedPasswordHash = bcrypt.hashSync(seedPassword, 10);
+
+const baseUsers = [
   {
     id: "9dc8ddf0-898b-471c-a4ab-79df1764f7a1",
     nom: "Leclerc",
@@ -127,6 +131,11 @@ const users = [
     statut: "particulier",
   },
 ];
+
+const users = baseUsers.map((user) => ({
+  ...user,
+  password_hash: seedPasswordHash,
+}));
 
 const boats = [
   {

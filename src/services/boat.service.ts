@@ -3,6 +3,8 @@ import { BaseService } from "./base.service";
 import { CreateBoatInput, BBox } from "../types/inputs";
 import { businessError } from "../utils/errors";
 import { UserService } from "./user.service";
+import type { Context } from "../context";
+import { requireAuth } from "../utils/auth";
 
 export class BoatService extends BaseService {
     private userService: UserService;
@@ -48,7 +50,9 @@ export class BoatService extends BaseService {
     /**
      * Create a new boat with business rule validation
      */
-    async create(userId: string, input: CreateBoatInput): Promise<Boat> {
+    async create(ctx: Context, userId: string, input: CreateBoatInput): Promise<Boat> {
+        requireAuth(ctx, userId);
+
         // BR-B1: Boat license required (BF27)
         await this.validateUserCanCreateBoat(userId);
 
@@ -81,11 +85,16 @@ export class BoatService extends BaseService {
     /**
      * Soft delete a boat
      */
-    async delete(id: string): Promise<boolean> {
+    async delete(ctx: Context, id: string): Promise<boolean> {
+        const user = requireAuth(ctx);
         const boat = await this.findById(id);
 
         if (!boat) {
             businessError("Boat not found", "FF-011");
+        }
+
+        if (boat.user_id !== user.id) {
+            businessError("Boat deletion denied: unauthorized", "FF-026");
         }
 
         await this.prisma.boat.update({

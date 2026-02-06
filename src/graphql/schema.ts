@@ -168,6 +168,7 @@ export const typeDefs = gql`
     # Optional license fields
     permisBateau: String
     assurance: String
+    password: String!
   }
 
   input CreateBoatInput {
@@ -231,11 +232,22 @@ export const typeDefs = gql`
     maxLon: Float!
   }
 
+  input LoginInput {
+    email: String!
+    password: String!
+  }
+
+  type AuthPayload {
+    token: String!
+    user: User!
+  }
+
   # Root Types
   type Query {
     # Users
     users: [User!]!
     user(id: ID!): User
+    me: User!
 
     # Boats
     boats: [Boat!]!
@@ -253,6 +265,8 @@ export const typeDefs = gql`
 
   type Mutation {
     # Users
+    signup(input: CreateUserInput!): AuthPayload!
+    login(input: LoginInput!): AuthPayload!
     createUser(input: CreateUserInput!): User!
     deleteUser(id: ID!): Boolean!
 
