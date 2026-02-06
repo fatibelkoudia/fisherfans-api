@@ -18,6 +18,7 @@ export interface CreateUserInput {
     rc?: string | null;
     permisBateau?: string | null;
     assurance?: string | null;
+    password: string;
 }
 
 export interface CreateBoatInput {
@@ -79,4 +80,9 @@ export interface BBox {
     maxLat: number;
     minLon: number;
     maxLon: number;
+}
+
+export interface LoginInput {
+    email: string;
+    password: string;
 }

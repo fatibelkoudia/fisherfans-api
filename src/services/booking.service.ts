@@ -5,6 +5,8 @@ import { businessError } from "../utils/errors";
 import { UserService } from "./user.service";
 import { TripService } from "./trip.service";
 import { OccurrenceService } from "./occurrence.service";
+import type { Context } from "../context";
+import { requireAuth } from "../utils/auth";
 
 export class BookingService extends BaseService {
     private userService: UserService;
@@ -30,7 +32,9 @@ export class BookingService extends BaseService {
     /**
      * Create a new booking with business rule validation
      */
-    async create(userId: string, input: CreateBookingInput): Promise<Booking> {
+    async create(ctx: Context, userId: string, input: CreateBookingInput): Promise<Booking> {
+        const user = requireAuth(ctx, userId);
+
         // Validate user exists
         await this.validateUserExists(userId);
 
@@ -58,11 +62,16 @@ export class BookingService extends BaseService {
     /**
      * Soft delete a booking
      */
-    async delete(id: string): Promise<boolean> {
+    async delete(ctx: Context, id: string): Promise<boolean> {
+        const user = requireAuth(ctx);
         const booking = await this.findById(id);
 
         if (!booking) {
             businessError("Booking not found", "FF-020");
+        }
+
+        if (booking.user_id !== user.id) {
+            businessError("Booking deletion denied: unauthorized", "FF-028");
         }
 
         await this.prisma.booking.update({

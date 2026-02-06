@@ -4,6 +4,8 @@ import { CreateTripInput } from "../types/inputs";
 import { businessError } from "../utils/errors";
 import { UserService } from "./user.service";
 import { BoatService } from "./boat.service";
+import type { Context } from "../context";
+import { requireAuth } from "../utils/auth";
 
 export class TripService extends BaseService {
     private userService: UserService;
@@ -36,7 +38,9 @@ export class TripService extends BaseService {
     /**
      * Create a new trip with business rule validation
      */
-    async create(userId: string, input: CreateTripInput): Promise<Trip> {
+    async create(ctx: Context, userId: string, input: CreateTripInput): Promise<Trip> {
+        requireAuth(ctx, userId);
+
         // BR-S1: Boat ownership required (BF26)
         await this.validateUserCanCreateTrip(userId);
 
@@ -66,11 +70,16 @@ export class TripService extends BaseService {
     /**
      * Soft delete a trip
      */
-    async delete(id: string): Promise<boolean> {
+    async delete(ctx: Context, id: string): Promise<boolean> {
+        const user = requireAuth(ctx);
         const trip = await this.findById(id);
 
         if (!trip) {
             businessError("Trip not found", "FF-015");
+        }
+
+        if (trip.owner_id !== user.id) {
+            businessError("Trip deletion denied: unauthorized", "FF-027");
         }
 
         await this.prisma.trip.update({

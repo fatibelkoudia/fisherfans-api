@@ -1,0 +1,84 @@
+query GetUsers {
+  users {
+    id
+    nom
+    prenom
+    email
+  }
+}
+
+query GetUserWithBoats($userId: ID!) {
+  user(id: $userId) {
+    id
+    nom
+    prenom
+    boats {
+      id
+      nom
+      capaciteMax
+    }
+  }
+}
+
+query GetTripWithOccurrences($tripId: ID!) {
+  trip(id: $tripId) {
+    id
+    titre
+    occurrences {
+      id
+      dateDebut
+      heureDepart
+    }
+  }
+}
+
+query GetTripWithBookings($tripId: ID!) {
+  trip(id: $tripId) {
+    id
+    titre
+    bookings {
+      id
+      nbPlaces
+      prixTotalEur
+    }
+  }
+}
+
+query GetUserWithBookings($userId: ID!) {
+  user(id: $userId) {
+    id
+    nom
+    bookings {
+      id
+      nbPlaces
+      prixTotalEur
+      trip {
+        id
+        titre
+      }
+      occurrence {
+        id
+        dateDebut
+      }
+    }
+  }
+}
+
+query GetBoatsAfterDelete {
+  boats {
+    id
+    nom
+  }
+}
+
+query GetUserWithLogEntries($userId: ID!) {
+  user(id: $userId) {
+    id
+    nom
+    logEntries {
+      id
+      poissonNom
+      lieu
+    }
+  }
+}

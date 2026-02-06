@@ -1,3 +1,4 @@
+import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 import { BaseService } from "./base.service";
 import { CreateUserInput } from "../types/inputs";
@@ -32,6 +33,8 @@ export class UserService extends BaseService {
         // BR-U3: Unique email validation
         await this.validateUniqueEmail(input.email);
 
+        const passwordHash = await this.hashPassword(input.password);
+
         return this.prisma.user.create({
             data: {
                 nom: input.nom,
@@ -50,9 +53,21 @@ export class UserService extends BaseService {
                 siret: input.siret,
                 rc: input.rc,
                 permis_bateau: input.permisBateau,
-                assurance: input.assurance
+                assurance: input.assurance,
+                password_hash: passwordHash
             }
         });
+    }
+
+    async findByEmail(email: string): Promise<User | null> {
+        return this.prisma.user.findFirst({
+            where: { email, deleted_at: null }
+        });
+    }
+
+    private async hashPassword(password: string): Promise<string> {
+        const saltRounds = 12;
+        return bcrypt.hash(password, saltRounds);
     }
 
     /**

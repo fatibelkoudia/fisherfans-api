@@ -3,6 +3,8 @@ import { BaseService } from "./base.service";
 import { CreateLogEntryInput } from "../types/inputs";
 import { businessError } from "../utils/errors";
 import { UserService } from "./user.service";
+import type { Context } from "../context";
+import { requireAuth } from "../utils/auth";
 
 export class LogEntryService extends BaseService {
     private userService: UserService;
@@ -33,7 +35,9 @@ export class LogEntryService extends BaseService {
     /**
      * Create a new log entry with business rule validation
      */
-    async create(userId: string, input: CreateLogEntryInput): Promise<LogEntry> {
+    async create(ctx: Context, userId: string, input: CreateLogEntryInput): Promise<LogEntry> {
+        const user = requireAuth(ctx, userId);
+
         // Verify user exists
         await this.validateUserExists(userId);
 
@@ -58,11 +62,16 @@ export class LogEntryService extends BaseService {
     /**
      * Soft delete a log entry
      */
-    async delete(id: string): Promise<boolean> {
+    async delete(ctx: Context, id: string): Promise<boolean> {
+        const user = requireAuth(ctx);
         const logEntry = await this.findById(id);
 
         if (!logEntry) {
             businessError("Log entry not found", "FF-024");
+        }
+
+        if (logEntry.owner_id !== user.id) {
+            businessError("Log entry deletion denied: unauthorized", "FF-029");
         }
 
         await this.prisma.logEntry.update({
