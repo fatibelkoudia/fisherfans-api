@@ -1,4 +1,5 @@
 const fs = require("node:fs");
+const bcrypt = require("bcrypt");
 const { PrismaClient } = require("@prisma/client");
 
 function resolveDatabaseUrl() {
@@ -29,7 +30,10 @@ const prisma = new PrismaClient({
   },
 });
 
-const users = [
+const seedPassword = "FisherFans123!";
+const seedPasswordHash = bcrypt.hashSync(seedPassword, 10);
+
+const baseUsers = [
   {
     id: "9dc8ddf0-898b-471c-a4ab-79df1764f7a1",
     nom: "Leclerc",
@@ -46,7 +50,8 @@ const users = [
     type_activite: "guide",
     siret: "12345678901234",
     rc: "RC-MED-2026",
-    permis_bateau: "cotier",
+    // Must be 8 chars to satisfy BR-B1 (BF27) in userService.hasValidBoatLicense()
+    permis_bateau: "12345678",
     assurance: "AXA123456789",
   },
   {
@@ -65,7 +70,7 @@ const users = [
     type_activite: "location",
     siret: "22345678901234",
     rc: "RC-ATL-2026",
-    permis_bateau: "cotier",
+    permis_bateau: "23456789",
     assurance: "ALL123456789",
   },
   {
@@ -110,7 +115,7 @@ const users = [
     type_activite: "location",
     siret: "32345678901234",
     rc: "RC-CAL-2026",
-    permis_bateau: "fluvial",
+    permis_bateau: "34567890",
     assurance: "MAIF12345678",
   },
   {
@@ -126,7 +131,97 @@ const users = [
     langues: ["fr", "en", "it"],
     statut: "particulier",
   },
+  //   lists + auth + license rules
+  {
+    id: "8b37b74a-6e48-4e64-93a0-24a3a1c25f45",
+    nom: "Durand",
+    prenom: "Camille",
+    date_naissance: new Date("1991-02-11T00:00:00.000Z"),
+    email: "camille.durand@fisherfans.test",
+    telephone: "+33600000007",
+    adresse: "3 rue des Quais",
+    code_postal: "06000",
+    ville: "Nice",
+    langues: ["fr", "en"],
+    statut: "professionnel",
+    societe: "Azur Fishing Trips",
+    type_activite: "guide",
+    siret: "42345678901234",
+    rc: "RC-AZU-2026",
+    permis_bateau: "45678901",
+    assurance: "GMF123456789",
+  },
+  {
+    id: "b0f2a8a8-16c8-4d66-bb3a-4f6f0f64c3c0",
+    nom: "Nguyen",
+    prenom: "Linh",
+    date_naissance: new Date("1993-09-09T00:00:00.000Z"),
+    email: "linh.nguyen@fisherfans.test",
+    telephone: "+33600000008",
+    adresse: "21 avenue du Port",
+    code_postal: "33000",
+    ville: "Bordeaux",
+    langues: ["fr"],
+    statut: "particulier",
+    permis_bateau: "56789012",
+  },
+  {
+    id: "c3d7c7b3-8a9f-44e3-9bb8-0f1cf34a1c0d",
+    nom: "Lemaire",
+    prenom: "Thomas",
+    date_naissance: new Date("1989-12-01T00:00:00.000Z"),
+    email: "thomas.lemaire@fisherfans.test",
+    telephone: "+33600000009",
+    adresse: "8 impasse des Iles",
+    code_postal: "35800",
+    ville: "Dinard",
+    langues: ["fr", "en"],
+    statut: "particulier",
+  },
+  {
+    id: "de3a1d74-7b1b-4f1b-a1d4-9a2f07d0a9b1",
+    nom: "Garcia",
+    prenom: "Ines",
+    date_naissance: new Date("1998-06-22T00:00:00.000Z"),
+    email: "ines.garcia@fisherfans.test",
+    telephone: "+33600000010",
+    adresse: "15 rue des Marees",
+    code_postal: "17000",
+    ville: "La Rochelle",
+    langues: ["fr", "es"],
+    statut: "professionnel",
+    societe: "Ocean Rentals",
+    type_activite: "location",
+    siret: "52345678901234",
+    rc: "RC-OCE-2026",
+    permis_bateau: "67890123", // Must be 8 chars to satisfy BR-B1
+    assurance: "MAC123456789",
+  },
 ];
+
+const users = baseUsers.map((user) => ({
+  ...user,
+  password_hash: seedPasswordHash,
+}));
+
+function assertMaxLen({ label, value, max, user }) {
+  if (value == null) return;
+  if (typeof value !== "string") {
+    throw new Error(`[seed] ${label} must be a string (got ${typeof value}) for user ${user.email}`);
+  }
+  if (value.length > max) {
+    throw new Error(
+      `[seed] ${label} too long for user ${user.email} (${user.id}): length=${value.length}, max=${max}, value="${value}"`
+    );
+  }
+}
+
+function validateUsers(usersToValidate) {
+  for (const user of usersToValidate) {
+    assertMaxLen({ label: "permis_bateau", value: user.permis_bateau, max: 8, user });
+    assertMaxLen({ label: "assurance", value: user.assurance, max: 12, user });
+  }
+}
 
 const boats = [
   {
@@ -188,6 +283,47 @@ const boats = [
     lon: "5.595325",
     motorisation: "inboard diesel",
     puissance_cv: 220,
+  },
+  //   lists + auth + license rules
+  {
+    id: "89375514-79ed-4bf0-a89b-e5afa0373ea6",
+    user_id: "8b37b74a-6e48-4e64-93a0-24a3a1c25f45",
+    nom: "Azur Skiff",
+    description: "Bateau leger ideal pour sorties rapides autour de Nice.",
+    marque: "Quicksilver",
+    annee: 2019,
+    photo_url: "https://images.fisherfans.test/boats/azur-skiff.jpg",
+    permis_requis: "cotier",
+    type: "open",
+    equipements: ["GPS", "vhf", "gilets"],
+    caution_eur: "900.00",
+    capacite_max: 5,
+    couchages: 0,
+    port_attache_ville: "Nice",
+    lat: "43.703468",
+    lon: "7.266557",
+    motorisation: "hors-bord",
+    puissance_cv: 115,
+  },
+  {
+    id: "1d2c1e08-2b0b-4d7b-8f02-6a70d9422c7b",
+    user_id: "de3a1d74-7b1b-4f1b-a1d4-9a2f07d0a9b1",
+    nom: "Ocean Sprint",
+    description: "Semi-rigide pour location a la journee au depart de La Rochelle.",
+    marque: "Zodiac",
+    annee: 2021,
+    photo_url: "https://images.fisherfans.test/boats/ocean-sprint.jpg",
+    permis_requis: "cotier",
+    type: "open",
+    equipements: ["vhf", "gilets", "sondeur"],
+    caution_eur: "1100.00",
+    capacite_max: 7,
+    couchages: 0,
+    port_attache_ville: "La Rochelle",
+    lat: "46.160000",
+    lon: "-1.151000",
+    motorisation: "hors-bord",
+    puissance_cv: 140,
   },
 ];
 
@@ -351,7 +487,18 @@ async function main() {
     prisma.user.deleteMany(),
   ]);
 
-  await prisma.user.createMany({ data: users });
+  validateUsers(users);
+
+  // Create users one-by-one to make seed errors actionable (Prisma createMany doesn't surface which row/column failed).
+  for (const user of users) {
+    try {
+      await prisma.user.create({ data: user });
+    } catch (error) {
+      console.error("[seed] Failed to create user:", { id: user.id, email: user.email });
+      throw error;
+    }
+  }
+
   await prisma.boat.createMany({ data: boats });
   await prisma.trip.createMany({ data: trips });
   await prisma.occurrence.createMany({ data: occurrences });

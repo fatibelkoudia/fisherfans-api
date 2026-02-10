@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { AuthService } from "./auth.service";
 import { UserService } from "./user.service";
 import { BoatService } from "./boat.service";
 import { TripService } from "./trip.service";
@@ -8,6 +9,7 @@ import { LogEntryService } from "./logEntry.service";
 
 export class ServiceContainer {
     public readonly user: UserService;
+    public readonly auth: AuthService;
     public readonly boat: BoatService;
     public readonly trip: TripService;
     public readonly occurrence: OccurrenceService;
@@ -16,6 +18,7 @@ export class ServiceContainer {
 
     constructor(prisma: PrismaClient) {
         this.user = new UserService(prisma);
+        this.auth = new AuthService(prisma, this.user);
         this.boat = new BoatService(prisma);
         this.trip = new TripService(prisma);
         this.occurrence = new OccurrenceService(prisma);
@@ -25,6 +28,7 @@ export class ServiceContainer {
 }
 
 export * from "./user.service";
+export * from "./auth.service";
 export * from "./boat.service";
 export * from "./trip.service";
 export * from "./occurrence.service";

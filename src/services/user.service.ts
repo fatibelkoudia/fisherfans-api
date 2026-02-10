@@ -1,7 +1,10 @@
+import bcrypt from "bcrypt";
 import { User } from "@prisma/client";
 import { BaseService } from "./base.service";
-import { CreateUserInput } from "../types/inputs";
+import { CreateUserInput, UpdateUserInput } from "../types/inputs";
 import { businessError } from "../utils/errors";
+import { requireAuth } from "../utils/auth";
+import type { Context } from "../context";
 
 export class UserService extends BaseService {
     /**
@@ -32,6 +35,8 @@ export class UserService extends BaseService {
         // BR-U3: Unique email validation
         await this.validateUniqueEmail(input.email);
 
+        const passwordHash = await this.hashPassword(input.password);
+
         return this.prisma.user.create({
             data: {
                 nom: input.nom,
@@ -50,9 +55,77 @@ export class UserService extends BaseService {
                 siret: input.siret,
                 rc: input.rc,
                 permis_bateau: input.permisBateau,
-                assurance: input.assurance
+                assurance: input.assurance,
+                password_hash: passwordHash
             }
         });
+    }
+
+    async findByEmail(email: string): Promise<User | null> {
+        return this.prisma.user.findFirst({
+            where: { email, deleted_at: null }
+        });
+    }
+
+    /**
+     * Update an existing user (authenticated user only)
+     */
+    async update(ctx: Context, id: string, input: UpdateUserInput): Promise<User> {
+        requireAuth(ctx, id);
+
+        const existing = await this.findById(id);
+        if (!existing) {
+            businessError("User not found", "FF-007");
+        }
+
+        if (input.email && input.email !== existing.email) {
+            await this.validateUniqueEmail(input.email);
+        }
+
+        const nextStatut = input.statut ?? existing.statut;
+        const nextSociete = input.societe ?? existing.societe;
+        const nextTypeActivite = input.typeActivite ?? existing.type_activite;
+        const nextSiret = input.siret ?? existing.siret;
+        const nextRc = input.rc ?? existing.rc;
+
+        if (nextStatut === "professionnel") {
+            if (!nextSociete || !nextTypeActivite || !nextSiret || !nextRc) {
+                businessError(
+                    "Professional users must provide: societe, typeActivite, siret, rc",
+                    "FF-005"
+                );
+            }
+        }
+
+        const data: Record<string, unknown> = {};
+        if (input.nom !== undefined) data.nom = input.nom;
+        if (input.prenom !== undefined) data.prenom = input.prenom;
+        if (input.dateNaissance !== undefined) data.date_naissance = input.dateNaissance;
+        if (input.email !== undefined) data.email = input.email;
+        if (input.telephone !== undefined) data.telephone = input.telephone;
+        if (input.adresse !== undefined) data.adresse = input.adresse;
+        if (input.codePostal !== undefined) data.code_postal = input.codePostal;
+        if (input.ville !== undefined) data.ville = input.ville;
+        if (input.langues !== undefined) data.langues = input.langues;
+        if (input.photoUrl !== undefined) data.photo_url = input.photoUrl;
+        if (input.statut !== undefined) data.statut = input.statut;
+        if (input.societe !== undefined) data.societe = input.societe;
+        if (input.typeActivite !== undefined) data.type_activite = input.typeActivite;
+        if (input.siret !== undefined) data.siret = input.siret;
+        if (input.rc !== undefined) data.rc = input.rc;
+        if (input.permisBateau !== undefined) data.permis_bateau = input.permisBateau;
+        if (input.assurance !== undefined) data.assurance = input.assurance;
+        if (input.password !== undefined) data.password_hash = await this.hashPassword(input.password);
+
+        return this.prisma.user.update({
+            where: { id },
+            data
+        });
+    }
+
+    private async hashPassword(password: string): Promise<string> {
+        const saltRounds = 12;
+        return bcrypt.hash(password, saltRounds);
     }
 
     /**
@@ -89,7 +162,7 @@ export class UserService extends BaseService {
         const user = await this.findById(userId);
         if (!user) return false;
 
-        return !!(user.permis_bateau && user.permis_bateau.length === 8);
+        return user.permis_bateau?.length === 8;
     }
 
     /**

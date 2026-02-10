@@ -1,0 +1,320 @@
+{
+  "info": {
+    "_postman_id": "7f107a0a-289a-429f-80f3-7e8316610d77",
+    "name": "FisherFans API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Utilisateur",
+      "item": [],
+      "id": "0ddb5fa7-738c-4735-b4e4-4e078953f0da"
+    },
+    {
+      "name": "New Request",
+      "id": "b0dffb5a-984a-4083-b191-fea472e661b2",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 2.1 - Listes des utilisateur",
+      "id": "5eb03cd1-61de-450a-97a3-165873151886",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 2.2 - Ressource Bateaux exposée",
+      "id": "d4080b7a-04e0-4ab8-8492-5c9bf8446113",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 2.3 - Ressource Sorties exposée",
+      "id": "f2457a98-35b3-48a5-b42d-872769ea162a",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 2.5 - Ressource Carnet exposée",
+      "id": "f5fe3976-99a6-47b6-8ffb-b4146b539a8d",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 2.4 - Ressource Réservations exposée",
+      "id": "2b427010-9954-4284-a0cf-997d7cf6ae6b",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 3 - Creer un utilisateur",
+      "id": "3f4adf71-4aca-46ba-96c8-4af11008d81f",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 5 - Création de sortie de pêche",
+      "id": "cc72b882-e11d-4bf0-a5bb-1f7802c62151",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 4 - Création de bateau réussie",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test(\"BF 4 - Création de bateau réussie\", function () {",
+              "    const jsonData = pm.response.json();",
+              "    // Vérifie qu'il n'y a pas d'erreur",
+              "    pm.expect(jsonData.errors).to.be.undefined;",
+              "    // Vérifie que les données du bateau sont présentes",
+              "    pm.expect(jsonData.data.createBoat).to.have.property('id');",
+              "    pm.expect(jsonData.data.createBoat.nom).to.equal(\"L'Espadon\");",
+              "});"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "id": "47acd0a2-2c3c-42b3-9e8d-593129f38d08",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 6 - Création de réservation réussie",
+      "id": "5f13e2c0-a1c6-4cfb-b543-b9b05fe8f323",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 7 - Création nouveau carnet de pêcheec succès",
+      "id": "a4f3e660-03a8-4f4c-99f5-bf3c6572f66d",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 8 - Supprimer un utilisateur",
+      "id": "16badf82-c9a2-4a36-8164-4dfb8cdf5f8c",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 9 - Supprimer un bateau",
+      "id": "497fe2e1-02b1-4281-a383-88851986ec6d",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 10 - Supprimer une sortie de pêchee",
+      "id": "429f0c96-c684-438e-9248-f5f67b61f212",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 11 - Supprimer une réservation",
+      "id": "ad96f732-bf58-4fab-9b2b-5be324a928e5",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF12 - Suppriimer des pages du carnets de pêche",
+      "id": "d1fcd0e7-19a2-40f0-bbe2-96261f892838",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF13 - Modifier un utilisateur",
+      "id": "212a5026-73a0-4cad-bb9e-cc6575752882",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 19 - Récupération complète du profil d'un utilisateur",
+      "id": "ce8263e5-d498-4cf9-8cc9-0de920c38478",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 20 - Filtrer les utilisateurs",
+      "id": "a5c5c26c-2fc5-437c-a390-d41ffc18dd5e",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 21 - Filtrer bateaux peu importe",
+      "id": "8592c444-3467-4300-8d65-f3e1417e1956",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 24 - Filtrer bateaux par zone",
+      "id": "69d5855d-3c74-4253-acfe-a66fc66bbbe3",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 26 - Interdiction création sortie sans bateau",
+      "id": "87465eb9-73ed-4c00-a957-90c5bee0133f",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 27 - Interdiction création bateau sans permis",
+      "id": "ea13760a-5b38-4276-b9cf-ffca29eb6585",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "BF 25 - Code erreur en cas de mausvaise utilisation des endpoints",
+      "id": "6fec4e2d-d46a-4f2b-b9f1-1af2d742c5a3",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": ""
+        }
+      },
+      "response": []
+    }
+  ]
+}

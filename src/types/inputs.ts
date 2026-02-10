@@ -18,6 +18,28 @@ export interface CreateUserInput {
     rc?: string | null;
     permisBateau?: string | null;
     assurance?: string | null;
+    password: string;
+}
+
+export interface UpdateUserInput {
+    nom?: string;
+    prenom?: string;
+    dateNaissance?: Date;
+    email?: string;
+    telephone?: string;
+    adresse?: string;
+    codePostal?: string;
+    ville?: string;
+    langues?: string[];
+    photoUrl?: string | null;
+    statut?: UserStatus;
+    societe?: string | null;
+    typeActivite?: UserActivityType | null;
+    siret?: string | null;
+    rc?: string | null;
+    permisBateau?: string | null;
+    assurance?: string | null;
+    password?: string;
 }
 
 export interface CreateBoatInput {
@@ -79,4 +101,9 @@ export interface BBox {
     maxLat: number;
     minLon: number;
     maxLon: number;
+}
+
+export interface LoginInput {
+    email: string;
+    password: string;
 }

@@ -14,7 +14,7 @@ import {
     UserStatus
 } from "@prisma/client";
 import { GraphQLScalarType, Kind, ValueNode } from "graphql";
-import { BusinessError } from "../utils/errors";
+import { BusinessError, businessError } from "../utils/errors";
 import {
     CreateUserInput,
     CreateBoatInput,
@@ -22,7 +22,9 @@ import {
     CreateOccurrenceInput,
     CreateBookingInput,
     CreateLogEntryInput,
-    BBox
+    BBox,
+    LoginInput,
+    UpdateUserInput
 } from "../types/inputs";
 
 type EmptyArgs = Record<string, never>;
@@ -67,6 +69,27 @@ export const resolvers = {
             return context.services.user.findById(id);
         },
 
+        me: async (_parent: unknown, _args: EmptyArgs, context: Context) => {
+            try {
+                if (!context.user) {
+                    businessError("Authentication required", "FF-401");
+                }
+
+                const user = await context.services.user.findById(context.user.id);
+
+                if (!user) {
+                    businessError("Authenticated user not found", "FF-007");
+                }
+
+                return user;
+            } catch (error) {
+                if (error instanceof BusinessError) {
+                    throw error.toGraphQLError();
+                }
+                throw error;
+            }
+        },
+
         // Boats
         boats: async (_parent: unknown, _args: EmptyArgs, context: Context) => {
             return context.services.boat.findAll();
@@ -78,7 +101,7 @@ export const resolvers = {
         // BR-G1: Bounding box search for boats (BF24)
         boatsByLocation: async (_parent: unknown, { bbox }: BBoxArgs, context: Context) => {
             try {
-                return context.services.boat.findByLocation(bbox);
+                return await context.services.boat.findByLocation(bbox);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -113,9 +136,42 @@ export const resolvers = {
         // USER MUTATIONS
         // -------------------------------------------------------------------
 
+        signup: async (_parent: unknown, { input }: { input: CreateUserInput }, context: Context) => {
+            try {
+                return await context.services.auth.signup(input);
+            } catch (error) {
+                if (error instanceof BusinessError) {
+                    throw error.toGraphQLError();
+                }
+                throw error;
+            }
+        },
+
+        login: async (_parent: unknown, { input }: { input: LoginInput }, context: Context) => {
+            try {
+                return await context.services.auth.login(input.email, input.password);
+            } catch (error) {
+                if (error instanceof BusinessError) {
+                    throw error.toGraphQLError();
+                }
+                throw error;
+            }
+        },
+
         createUser: async (_parent: unknown, { input }: { input: CreateUserInput }, context: Context) => {
             try {
-                return context.services.user.create(input);
+                return await context.services.user.create(input);
+            } catch (error) {
+                if (error instanceof BusinessError) {
+                    throw error.toGraphQLError();
+                }
+                throw error;
+            }
+        },
+
+        updateUser: async (_parent: unknown, { id, input }: { id: string; input: UpdateUserInput }, context: Context) => {
+            try {
+                return await context.services.user.update(context, id, input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -126,7 +182,7 @@ export const resolvers = {
 
         deleteUser: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             try {
-                return context.services.user.delete(id);
+                return await context.services.user.delete(id);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -141,7 +197,7 @@ export const resolvers = {
 
         createBoat: async (_parent: unknown, { userId, input }: { userId: string; input: CreateBoatInput }, context: Context) => {
             try {
-                return context.services.boat.create(userId, input);
+                return await context.services.boat.create(context, userId, input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -152,7 +208,7 @@ export const resolvers = {
 
         deleteBoat: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             try {
-                return context.services.boat.delete(id);
+                return await context.services.boat.delete(context, id);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -167,7 +223,7 @@ export const resolvers = {
 
         createTrip: async (_parent: unknown, { userId, input }: { userId: string; input: CreateTripInput }, context: Context) => {
             try {
-                return context.services.trip.create(userId, input);
+                return await context.services.trip.create(context, userId, input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -178,7 +234,7 @@ export const resolvers = {
 
         deleteTrip: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             try {
-                return context.services.trip.delete(id);
+                return await context.services.trip.delete(context, id);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -193,7 +249,7 @@ export const resolvers = {
 
         createOccurrence: async (_parent: unknown, { input }: { input: CreateOccurrenceInput }, context: Context) => {
             try {
-                return context.services.occurrence.create(input);
+                return await context.services.occurrence.create(input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -208,7 +264,7 @@ export const resolvers = {
 
         createBooking: async (_parent: unknown, { userId, input }: { userId: string; input: CreateBookingInput }, context: Context) => {
             try {
-                return context.services.booking.create(userId, input);
+                return await context.services.booking.create(context, userId, input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -219,7 +275,7 @@ export const resolvers = {
 
         deleteBooking: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             try {
-                return context.services.booking.delete(id);
+                return await context.services.booking.delete(context, id);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -234,7 +290,7 @@ export const resolvers = {
 
         createLogEntry: async (_parent: unknown, { userId, input }: { userId: string; input: CreateLogEntryInput }, context: Context) => {
             try {
-                return context.services.logEntry.create(userId, input);
+                return await context.services.logEntry.create(context, userId, input);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
@@ -245,7 +301,7 @@ export const resolvers = {
 
         deleteLogEntry: async (_parent: unknown, { id }: IdArgs, context: Context) => {
             try {
-                return context.services.logEntry.delete(id);
+                return await context.services.logEntry.delete(context, id);
             } catch (error) {
                 if (error instanceof BusinessError) {
                     throw error.toGraphQLError();
